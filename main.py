@@ -1,142 +1,147 @@
 import pygame
-import time
 import random
+import sys
 
+# Pygame inicializálás
 pygame.init()
 
-# Színek meghatározása
-feher = (255, 255, 255)
-fekete = (0, 0, 0)
-piros = (213, 50, 80)
-zold = (0, 255, 0)
-kek = (50, 153, 213)
+# Színek
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+PURPLE = (160, 32, 240)
 
 # Ablak mérete
-dis_width = 800
-dis_height = 600
+WIDTH, HEIGHT = 600, 400
+win = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Kígyós játék - Űr és Bánya")
 
-# Játék kijelző
-dis = pygame.display.set_mode((dis_width, dis_height))
-pygame.display.set_caption('Kígyós játék')
-
-# Kígyó paraméterek
-kigyocsko_meret = 10
-kigyocsko_sebesseg = 15
-
-# Idő kezelése
+# Frissítési sebesség
 clock = pygame.time.Clock()
 
-# Betűtípus - alapértelmezett betűtípus használata, hogy elkerüld a figyelmeztetést
-font_style = pygame.font.SysFont(None, 25)
+# Kígyó kezdőpozíciója és mérete
+snake_pos = [100, 50]
+snake_body = [[100, 50], [90, 50], [80, 50]]
+snake_direction = 'RIGHT'
+change_to = snake_direction
 
-# Üzenet megjelenítése
-def az_uzeneget(szoveg, szin):
-    uzenet = font_style.render(szoveg, True, szin)
-    dis.blit(uzenet, [dis_width / 6, dis_height / 3])
+# Játék sebessége
+speed = 15
 
-# Kígyó kirajzolása
-def kigyo(kigyocsko_meret, kigyo_lista):
-    for x in kigyo_lista:
-        pygame.draw.rect(dis, zold, [x[0], x[1], kigyocsko_meret, kigyocsko_meret])
+# Csillag/kristály kezdő pozíció
+star_pos = [random.randrange(1, (WIDTH // 10)) * 10, random.randrange(1, (HEIGHT // 10)) * 10]
+star_spawn = True
 
-# Játék logika
-def jatek():
-    jatek_vege = False
-    jatek_bezar = False
+# Játék pontszám
+score = 0
 
-    x = dis_width / 2
-    y = dis_height / 2
+# Játék mód kiválasztása: űr vagy bánya
+environment = input("Válassz játék helyszínt: űr vagy bánya? (írj 'ur' vagy 'banya'): ").strip().lower()
 
-    x_valtozas = 0
-    y_valtozas = 0
+# Háttér beállítása
+if environment == 'ur':
+    background_color = BLACK  # Űr háttér
+    star_color = YELLOW  # Csillag
+else:
+    background_color = (139, 69, 19)  # Bánya háttér (barna)
+    star_color = PURPLE  # Kristály
 
-    kigyo_lista = []
-    kigyo_hossza = 1
+# Funkció a pontszám megjelenítéséhez
+def show_score(choice=1):
+    font = pygame.font.SysFont('times new roman', 20)
+    score_surface = font.render('Pontszám: ' + str(score), True, WHITE)
+    score_rect = score_surface.get_rect()
+    if choice == 1:
+        score_rect.midtop = (WIDTH / 10, 15)
+    else:
+        score_rect.center = (WIDTH / 2, HEIGHT / 2)
+    win.blit(score_surface, score_rect)
 
-    # Kaja pozíciója
-    kaja_x = round(random.randrange(0, dis_width - kigyocsko_meret) / 10.0) * 10.0
-    kaja_y = round(random.randrange(0, dis_height - kigyocsko_meret) / 10.0) * 10.0
-
-    while not jatek_vege:
-
-        while jatek_bezar:
-            dis.fill(fekete)
-            az_uzeneget("Vesztettél! Nyomj meg egy Q-t a kilépéshez vagy C-t az újraindításhoz", piros)
-            pygame.display.update()
-
-            for esemeny in pygame.event.get():
-                if esemeny.type == pygame.KEYDOWN:
-                    if esemeny.key == pygame.K_q:
-                        jatek_vege = True
-                        jatek_bezar = False
-                    if esemeny.key == pygame.K_c:
-                        jatek()
-
-        # Események kezelése
-        for esemeny in pygame.event.get():
-            if esemeny.type == pygame.QUIT:
-                jatek_vege = True
-            if esemeny.type == pygame.KEYDOWN:
-                if esemeny.key == pygame.K_LEFT:
-                    x_valtozas = -kigyocsko_meret
-                    y_valtozas = 0
-                elif esemeny.key == pygame.K_RIGHT:
-                    x_valtozas = kigyocsko_meret
-                    y_valtozas = 0
-                elif esemeny.key == pygame.K_UP:
-                    y_valtozas = -kigyocsko_meret
-                    x_valtozas = 0
-                elif esemeny.key == pygame.K_DOWN:
-                    y_valtozas = kigyocsko_meret
-                    x_valtozas = 0
-
-        # Ha a kígyó elér a falhoz
-        if x >= dis_width or x < 0 or y >= dis_height or y < 0:
-            jatek_bezar = True
-
-        # Kígyó mozgása
-        x += x_valtozas
-        y += y_valtozas
-
-        # Játéktér kirajzolása
-        dis.fill(fekete)
-
-        # Kaja kirajzolása
-        pygame.draw.rect(dis, kek, [kaja_x, kaja_y, kigyocsko_meret, kigyocsko_meret])
-
-        # Kígyó fejének pozíciója
-        kigyo_feje = []
-        kigyo_feje.append(x)
-        kigyo_feje.append(y)
-        kigyo_lista.append(kigyo_feje)
-
-        # Kígyó hossza
-        if len(kigyo_lista) > kigyo_hossza:
-            del kigyo_lista[0]
-
-        # Ha a kígyó a saját testébe ütközik
-        for blokk in kigyo_lista[:-1]:
-            if blokk == kigyo_feje:
-                jatek_bezar = True
-
-        # Kígyó kirajzolása
-        kigyo(kigyocsko_meret, kigyo_lista)
-
-        # Képernyő frissítése
-        pygame.display.update()
-
-        # Ha a kígyó megette a kaját
-        if x == kaja_x and y == kaja_y:
-            kaja_x = round(random.randrange(0, dis_width - kigyocsko_meret) / 10.0) * 10.0
-            kaja_y = round(random.randrange(0, dis_height - kigyocsko_meret) / 10.0) * 10.0
-            kigyo_hossza += 1
-
-        # Játék sebessége
-        clock.tick(kigyocsko_sebesseg)
-
-    # Kilépés a játékból
+# Játék vége
+def game_over():
+    font = pygame.font.SysFont('times new roman', 50)
+    GO_surface = font.render('Játék vége', True, RED)
+    GO_rect = GO_surface.get_rect()
+    GO_rect.midtop = (WIDTH / 2, HEIGHT / 4)
+    win.blit(GO_surface, GO_rect)
+    show_score(0)
+    pygame.display.flip()
+    pygame.time.sleep(3)
     pygame.quit()
-    quit()
+    sys.exit()
 
-# Játék indítása
-jatek()
+# Fő játékhurok
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        # Irányítás
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                if snake_direction != 'DOWN':
+                    change_to = 'UP'
+            elif event.key == pygame.K_DOWN:
+                if snake_direction != 'UP':
+                    change_to = 'DOWN'
+            elif event.key == pygame.K_LEFT:
+                if snake_direction != 'RIGHT':
+                    change_to = 'LEFT'
+            elif event.key == pygame.K_RIGHT:
+                if snake_direction != 'LEFT':
+                    change_to = 'RIGHT'
+
+    # Ha megváltozik az irány
+    snake_direction = change_to
+
+    # Kígyó mozgatása
+    if snake_direction == 'UP':
+        snake_pos[1] -= 10
+    if snake_direction == 'DOWN':
+        snake_pos[1] += 10
+    if snake_direction == 'LEFT':
+        snake_pos[0] -= 10
+    if snake_direction == 'RIGHT':
+        snake_pos[0] += 10
+
+    # Kígyó növelése, ha csillagot/kristályt eszik
+    snake_body.insert(0, list(snake_pos))
+    if snake_pos == star_pos:
+        score += 10
+        star_spawn = False
+    else:
+        snake_body.pop()
+
+    # Új csillag/kristály
+    if not star_spawn:
+        star_pos = [random.randrange(1, (WIDTH // 10)) * 10, random.randrange(1, (HEIGHT // 10)) * 10]
+    star_spawn = True
+
+    # Háttér rajzolása
+    win.fill(background_color)
+
+    # Kígyó rajzolása
+    for pos in snake_body:
+        pygame.draw.rect(win, GREEN, pygame.Rect(pos[0], pos[1], 10, 10))
+
+    # Csillag/kristály rajzolása
+    pygame.draw.rect(win, star_color, pygame.Rect(star_pos[0], star_pos[1], 10, 10))
+
+    # Játék vége, ha a kígyó nekiütközik a falnak vagy saját magának
+    if snake_pos[0] < 0 or snake_pos[0] > WIDTH - 10 or snake_pos[1] < 0 or snake_pos[1] > HEIGHT - 10:
+        game_over()
+    for block in snake_body[1:]:
+        if snake_pos == block:
+            game_over()
+
+    # Pontszám megjelenítése
+    show_score()
+
+    # Képernyő frissítése
+    pygame.display.update()
+
+    # Játék sebessége
+    clock.tick(speed)
